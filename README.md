@@ -6,6 +6,8 @@
 
 **Run CUDA-hardcoded PyTorch repos on Apple Silicon (MPS) — with zero source edits.**
 
+![demo](mpsify-demo.gif)
+
 You inherit someone's training script. It's full of `.cuda()`, `device='cuda'`,
 `torch.cuda.amp`, `map_location='cuda'`. PyTorch-MPS could run the actual math
 fine on your Mac — but the code dies before it gets the chance. `mpsify` patches
