@@ -104,8 +104,14 @@ Real pretrained models, output verified numerically identical to CPU
 
 - torchvision `resnet18`, `efficientnet_b0`, `vit_b_16`
 - timm `mobilenetv3_small_100`
+- HuggingFace `transformers` — DistilBERT sentiment: `.to('cuda')`, forward,
+  and `pipeline(device=0)` all run on MPS
 - A 3-step fine-tuning loop (loss decreases, params on `mps:0`)
 - Loading fp16/CUDA checkpoints via `mpsify.load`
+
+> **Note:** `transformers` 5.x refuses to `torch.load` a `.bin` checkpoint
+> unless torch ≥ 2.6 (a CVE guard). Use models that ship `safetensors`
+> (`use_safetensors=True`) — unrelated to mpsify.
 
 ## Scope
 

@@ -15,9 +15,12 @@ def test_cuda_is_available_lies():
     assert torch.cuda.device_count() == 1
 
 
-def test_device_string_remapped():
-    assert torch.device("cuda").type == "mps"
-    assert torch.device("cuda:3").type == "mps"
+def test_device_remapped_at_use_site():
+    # torch.device('cuda') stays a real cuda descriptor (keeps isinstance /
+    # `device | str` working); remapping happens where it's used.
+    if MPS:
+        assert torch.zeros(2).to(torch.device("cuda")).device.type == "mps"
+        assert torch.zeros(2, device=torch.device("cuda:3")).device.type == "mps"
 
 
 def test_tensor_cuda_lands_on_mps():
@@ -69,6 +72,25 @@ def test_integer_and_indexed_devices():
         assert torch.zeros(2).to(0).device.type == "mps"
         assert torch.zeros(2).cuda(0).device.type == "mps"
         assert torch.zeros(2).to("cuda:1").device.type == "mps"
+
+
+def test_torch_device_stays_a_type():
+    # Replacing torch.device with a function broke these — regression guards.
+    assert isinstance(torch.device, type)
+    assert isinstance(torch.device("cpu"), torch.device)
+    _ = torch.device | str  # PEP-604 union (used in transformers annotations)
+
+
+def test_factory_device_string_remapped():
+    if MPS:
+        assert torch.zeros(2, device="cuda").device.type == "mps"
+        assert torch.tensor([1.0], device="cuda").device.type == "mps"
+
+
+def test_cuda_device_context_is_noop():
+    # `with torch.cuda.device(i):` is used by HF pipelines.
+    with torch.cuda.device(0):
+        pass
 
 
 def test_load_upcasts_fp16(tmp_path):

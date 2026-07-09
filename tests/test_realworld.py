@@ -67,6 +67,29 @@ def test_load_cuda_checkpoint(tmp_path):
     assert out["half"].dtype == torch.float32  # fp16 upcast by default
 
 
+def test_transformers_sentiment():
+    """Real HF transformer: import, .to('cuda'), forward, and pipeline(device=0)."""
+    pytest.importorskip("transformers")
+    from transformers import (AutoModelForSequenceClassification,
+                              AutoTokenizer, pipeline)
+    name = "distilbert/distilbert-base-uncased-finetuned-sst-2-english"
+    tok = _download_ok(lambda: AutoTokenizer.from_pretrained(name))
+    model = _download_ok(
+        lambda: AutoModelForSequenceClassification.from_pretrained(
+            name, use_safetensors=True)).to("cuda")
+    assert next(model.parameters()).device.type == "mps"
+
+    enc = tok("this movie was fantastic", return_tensors="pt").to("cuda")
+    with torch.no_grad():
+        logits = model(**enc).logits
+    assert logits.device.type == "mps"
+    assert model.config.id2label[logits.argmax().item()] == "POSITIVE"
+
+    # pipeline(device=0) exercises `with torch.cuda.device(i):`
+    pipe = pipeline("text-classification", model=model, tokenizer=tok, device=0)
+    assert pipe("what a terrible waste of time")[0]["label"] == "NEGATIVE"
+
+
 def test_training_micro_run():
     import torchvision.models as M
     m = M.resnet18(num_classes=10).cuda()

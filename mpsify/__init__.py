@@ -64,6 +64,16 @@ def patch() -> None:
     torch.cuda.get_device_name = lambda *a, **k: "mps"
     torch.cuda.manual_seed = lambda seed: mps.manual_seed(seed)
     torch.cuda.manual_seed_all = lambda seed: mps.manual_seed(seed)
+    # `with torch.cuda.device(i):` (used by HF pipelines) -> no-op context.
+    import contextlib as _cl
+
+    @_cl.contextmanager
+    def _cuda_device_ctx(*a, **k):
+        yield
+
+    torch.cuda.device = _cuda_device_ctx
+    torch.cuda._exchange_device = lambda *a, **k: -1
+    torch.cuda._maybe_exchange_device = lambda *a, **k: -1
 
     # --- .cuda() -> .to('mps') ---------------------------------------------
     def _tensor_cuda(self, *a, **k):
@@ -75,15 +85,26 @@ def patch() -> None:
     torch.Tensor.cuda = _tensor_cuda
     torch.nn.Module.cuda = _module_cuda
 
-    # --- torch.device('cuda') -> mps ---------------------------------------
-    _orig_device = torch.device
+    # --- factory device= kwarg: cuda -> mps --------------------------------
+    # torch.device itself is left intact on purpose: replacing it broke
+    # isinstance(x, torch.device) and `torch.device | str` annotations (the
+    # latter kills modern transformers imports). Remapping the device kwarg on
+    # the factories covers torch.zeros(..., device='cuda') and friends too.
+    _factories = ["tensor", "as_tensor", "zeros", "ones", "empty", "full",
+                  "arange", "linspace", "eye", "randn", "rand", "randint",
+                  "zeros_like", "ones_like", "empty_like", "full_like",
+                  "randn_like", "rand_like"]
 
-    def _device(*a, **k):
-        if a and isinstance(a[0], str) and a[0].startswith("cuda"):
-            a = ("mps",) + a[1:]
-        return _orig_device(*a, **k)
+    def _wrap_factory(fn):
+        def wrapped(*a, **k):
+            if "device" in k:
+                k["device"] = _remap_device(k["device"])
+            return fn(*a, **k)
+        return wrapped
 
-    torch.device = _device
+    for _name in _factories:
+        if hasattr(torch, _name):
+            setattr(torch, _name, _wrap_factory(getattr(torch, _name)))
 
     # --- Tensor.to / Module.to remap ---------------------------------------
     def _wrap_to(orig):
