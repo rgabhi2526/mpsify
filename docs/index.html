@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>mpsify — Run CUDA PyTorch code on Apple Silicon (Mac M1/M2/M3/M4) with no edits</title>
+<meta name="description" content="Run CUDA-hardcoded PyTorch repos on a Mac (Apple Silicon MPS) with zero source edits. Fixes 'Torch not compiled with CUDA enabled' — pip install mpsify.">
+<link rel="canonical" href="https://rgabhi2526.github.io/mpsify/">
+
+<!-- Open Graph / social -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="mpsify — run CUDA PyTorch code on Apple Silicon with zero edits">
+<meta property="og:description" content="Retargets .cuda() / device='cuda' to Apple's Metal (MPS) backend at import time. pip install mpsify.">
+<meta property="og:url" content="https://rgabhi2526.github.io/mpsify/">
+<meta name="twitter:card" content="summary">
+
+<!-- Structured data: helps Google show a rich result -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "mpsify",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS (Apple Silicon)",
+  "description": "Run CUDA-hardcoded PyTorch repos on Apple Silicon (MPS) with zero source edits.",
+  "url": "https://pypi.org/project/mpsify/",
+  "downloadUrl": "https://pypi.org/project/mpsify/",
+  "codeRepository": "https://github.com/rgabhi2526/mpsify",
+  "programmingLanguage": "Python",
+  "license": "https://opensource.org/licenses/MIT",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+
+<style>
+  :root { color-scheme: light dark; }
+  body { max-width: 46rem; margin: 3rem auto; padding: 0 1.2rem;
+         font: 17px/1.6 -apple-system, system-ui, sans-serif; }
+  h1 { font-size: 2rem; margin-bottom: .2rem; }
+  .sub { color: #888; margin-top: 0; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  pre { background: #1113; padding: .9rem 1rem; border-radius: 8px; overflow-x: auto; }
+  code { background: #1113; padding: .1rem .35rem; border-radius: 4px; }
+  pre code { background: none; padding: 0; }
+  a { color: #0a84ff; }
+  .cta a { display: inline-block; margin-right: 1rem; }
+  h2 { margin-top: 2.2rem; }
+</style>
+</head>
+<body>
+
+<h1>mpsify</h1>
+<p class="sub">Run CUDA-hardcoded PyTorch code on a Mac (Apple Silicon / MPS) — zero source edits.</p>
+
+<pre><code>pip install mpsify</code></pre>
+
+<p>You inherit a PyTorch training script full of <code>.cuda()</code>,
+<code>device='cuda'</code>, <code>torch.cuda.amp</code>. On a Mac it dies with
+<em>“Torch not compiled with CUDA enabled”</em> — even though the math would run
+fine on Apple's Metal (MPS) backend. <strong>mpsify</strong> patches
+<code>torch</code> at import time so every CUDA call transparently retargets to
+MPS. No rewrite from <code>cuda</code> to <code>mps</code>.</p>
+
+<pre><code># run any CUDA-hardcoded script on your Mac, unchanged
+python -m mpsify train.py --epochs 10</code></pre>
+
+<h2>What it fixes</h2>
+<ul>
+  <li><code>AssertionError: Torch not compiled with CUDA enabled</code> on Mac</li>
+  <li><code>RuntimeError: No CUDA GPUs are available</code></li>
+  <li>Loading a CUDA-trained checkpoint on Apple Silicon (<code>mpsify.load(...)</code>)</li>
+  <li>Silent CPU fallbacks — warned live, summarised at exit</li>
+</ul>
+
+<h2>Works on</h2>
+<p>Apple Silicon Macs — M1, M2, M3, M4. torchvision (ResNet, EfficientNet, ViT),
+timm, and HuggingFace <code>transformers</code> verified numerically identical to CPU.</p>
+
+<h2>Links</h2>
+<p class="cta">
+  <a href="https://pypi.org/project/mpsify/">PyPI</a>
+  <a href="https://github.com/rgabhi2526/mpsify">GitHub</a>
+  <a href="https://github.com/rgabhi2526/mpsify/issues">Report an issue</a>
+</p>
+
+</body>
+</html>

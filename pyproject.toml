@@ -4,13 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mpsify"
-version = "0.2.0"
+version = "0.2.1"
 description = "Run CUDA-hardcoded PyTorch repos on Apple Silicon (MPS) with zero source edits."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Abhyudaya Vasisht", email = "abhyudaya2005@gmail.com" }]
-keywords = ["pytorch", "mps", "apple-silicon", "cuda", "metal", "deep-learning"]
+keywords = [
+    "pytorch", "mps", "apple-silicon", "cuda", "metal", "deep-learning",
+    "torch", "mac", "macbook", "m1", "m2", "m3", "m4", "gpu",
+    "cuda-to-mps", "run-cuda-on-mac", "pytorch-mac", "no-cuda",
+    "metal-performance-shaders", "machine-learning", "training",
+]
 dependencies = ["torch>=1.12"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -18,15 +23,27 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
     "Environment :: GPU",
+    "Environment :: MacOS X",
     "Operating System :: MacOS",
+    "Operating System :: MacOS :: MacOS X",
+    "Typing :: Typed",
 ]
 
 [project.urls]
 Homepage = "https://github.com/rgabhi2526/mpsify"
+Documentation = "https://github.com/rgabhi2526/mpsify#readme"
 Repository = "https://github.com/rgabhi2526/mpsify"
 Issues = "https://github.com/rgabhi2526/mpsify/issues"
+Changelog = "https://github.com/rgabhi2526/mpsify/releases"
+"Source Code" = "https://github.com/rgabhi2526/mpsify"
 
 [project.scripts]
 mpsify = "mpsify.__main__:main"

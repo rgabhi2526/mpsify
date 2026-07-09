@@ -6,6 +6,11 @@
 
 **Run CUDA-hardcoded PyTorch repos on Apple Silicon (MPS) — with zero source edits.**
 
+Run PyTorch code written for NVIDIA CUDA GPUs on a Mac (M1, M2, M3, M4) without
+touching the source. `mpsify` retargets `.cuda()`, `device='cuda'`, and friends
+to Apple's Metal (MPS) backend at import time — so training and inference
+scripts that assume a CUDA GPU just work on a MacBook.
+
 ![demo](mpsify-demo.gif)
 
 You inherit someone's training script. It's full of `.cuda()`, `device='cuda'`,
@@ -122,6 +127,36 @@ ViT, etc.). It does **not** translate custom `.cu`/Triton kernels or make
 CUDA-only libraries (flash-attention, DeepSpeed, apex) actually work — those are
 detected and reported, not fixed.
 
+## FAQ / common errors this fixes
+
+**`AssertionError: Torch not compiled with CUDA enabled`** on a Mac — the code
+calls `.cuda()` or `torch.cuda.*` but there's no NVIDIA GPU. Run it under
+`python -m mpsify your_script.py` and the calls retarget to MPS.
+
+**`RuntimeError: No CUDA GPUs are available`** — same cause. mpsify makes
+`torch.cuda.is_available()` return `True` and routes work to Metal.
+
+**`RuntimeError: Attempting to deserialize object on a CUDA device ...`** when
+loading a checkpoint — the weights were saved on `cuda`. Use `mpsify.load(path)`
+(or run under the wrapper) to remap them to MPS.
+
+**How do I run PyTorch / CUDA code on an Apple Silicon Mac (M1/M2/M3/M4)?**
+Install with `pip install mpsify`, then `python -m mpsify train.py`. No source
+edits, no rewrite from `cuda` to `mps`.
+
+**Does a model trained on an NVIDIA A100/3090/4090 run on a Mac?** Yes — weights
+are just numbers. Load them with `mpsify.load(...)` and they run on MPS
+unchanged.
+
+**Do I have to change `device='cuda'` to `device='mps'` everywhere?** No. That's
+the point — mpsify does the remapping for you at runtime.
+
 ## License
 
 MIT
+
+---
+
+_Keywords: run CUDA on Mac, PyTorch Apple Silicon, torch MPS, convert CUDA to
+MPS, PyTorch on MacBook M1 M2 M3 M4, "Torch not compiled with CUDA enabled" fix,
+run NVIDIA GPU code on Mac, Metal Performance Shaders PyTorch._
