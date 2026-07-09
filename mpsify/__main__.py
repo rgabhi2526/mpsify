@@ -10,14 +10,22 @@ import sys
 
 def main() -> None:
     argv = sys.argv[1:]
+
+    if argv and argv[0] == "doctor":
+        from ._doctor import doctor
+        if len(argv) < 2:
+            print("usage: python -m mpsify doctor <script.py>", file=sys.stderr)
+            sys.exit(2)
+        sys.exit(doctor(argv[1]))
+
     profile = False
     if argv and argv[0] == "--profile":
         profile = True
         argv = argv[1:]
 
     if not argv:
-        print("usage: python -m mpsify [--profile] <script.py> [args...]",
-              file=sys.stderr)
+        print("usage: python -m mpsify [--profile] <script.py> [args...]\n"
+              "       python -m mpsify doctor <script.py>", file=sys.stderr)
         sys.exit(2)
 
     # Must precede any torch import.

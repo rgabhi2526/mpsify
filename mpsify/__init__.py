@@ -98,6 +98,9 @@ def patch() -> None:
     torch.Tensor.to = _wrap_to(torch.Tensor.to)
     torch.nn.Module.to = _wrap_to(torch.nn.Module.to)
 
+    # --- Tensor.pin_memory() -> no-op (no pinned memory on MPS) -------------
+    torch.Tensor.pin_memory = lambda self, *a, **k: self
+
     # --- torch.load(map_location='cuda') -----------------------------------
     _orig_load = torch.load
 
@@ -167,6 +170,36 @@ def patch() -> None:
             _report.note_missing_lib(lib)
 
     _patched = True
+
+
+def load(path, *, fp32: bool = True, **kwargs):
+    """Load a checkpoint saved on CUDA straight onto MPS.
+
+    Weights are device-agnostic numbers, so a CUDA-trained checkpoint runs on
+    MPS as-is — the only snag is torch restoring tensors to their saved device.
+    This forces map_location to mps (cpu if no MPS) and, by default, upcasts
+    fp16 tensors to fp32 (MPS half-precision has known-broken ops).
+    """
+    import torch
+    patch()
+    dev = "mps" if torch.backends.mps.is_available() else "cpu"
+    kwargs.setdefault("map_location", dev)
+    obj = torch.load(path, **kwargs)
+    if fp32:
+        obj = _upcast_fp16(obj)
+    return obj
+
+
+def _upcast_fp16(obj):
+    """Recursively cast float16 tensors -> float32 in tensors/dicts/lists."""
+    import torch
+    if isinstance(obj, torch.Tensor):
+        return obj.float() if obj.dtype == torch.float16 else obj
+    if isinstance(obj, dict):
+        return {k: _upcast_fp16(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return type(obj)(_upcast_fp16(v) for v in obj)
+    return obj
 
 
 patch()

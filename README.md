@@ -1,5 +1,9 @@
 # mpsify
 
+[![PyPI](https://img.shields.io/pypi/v/mpsify)](https://pypi.org/project/mpsify/)
+[![Python](https://img.shields.io/pypi/pyversions/mpsify)](https://pypi.org/project/mpsify/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+
 **Run CUDA-hardcoded PyTorch repos on Apple Silicon (MPS) — with zero source edits.**
 
 You inherit someone's training script. It's full of `.cuda()`, `device='cuda'`,
@@ -52,6 +56,31 @@ Libraries with no Metal backend at all (`bitsandbytes`, `apex`, `deepspeed`,
 `flash_attn`, `triton`) are detected and reported loudly instead of crashing
 cryptically.
 
+## Pre-flight check
+
+See what mpsify will do to a script **without running it**:
+
+```bash
+python -m mpsify doctor train.py
+```
+
+Reports every CUDA call it will remap and any library it can't fix
+(flash-attention, bitsandbytes, ...). Exit code is non-zero if something is
+unshimmable — handy in CI.
+
+## Loading a CUDA-trained checkpoint
+
+Weights are just numbers — a model trained on CUDA runs on MPS unchanged. The
+only snag is `torch.load` restoring tensors to their saved `cuda` device.
+`mpsify.load` handles that (and upcasts fp16 → fp32, since MPS half-precision
+has rough edges):
+
+```python
+import mpsify
+state = mpsify.load("model_trained_on_a100.pth")   # lands on MPS
+model.load_state_dict(state)
+```
+
 ## Diagnosing slow ops
 
 ```bash
@@ -67,6 +96,16 @@ per-op overhead — use it for a diagnostic pass, not production.
 |---|---|
 | `MPSIFY_AMP=1` | Re-enable AMP/autocast (default off = fp32, correct but slower). AMP on MPS is where correctness gets dicey. |
 | `MPSIFY_QUIET=1` | Suppress live fallback warnings; keep the exit summary. |
+
+## Tested on
+
+Real pretrained models, output verified numerically identical to CPU
+(max abs diff ~1e-6) on macOS + torch 2.5.1:
+
+- torchvision `resnet18`, `efficientnet_b0`, `vit_b_16`
+- timm `mobilenetv3_small_100`
+- A 3-step fine-tuning loop (loss decreases, params on `mps:0`)
+- Loading fp16/CUDA checkpoints via `mpsify.load`
 
 ## Scope
 

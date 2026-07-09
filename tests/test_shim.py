@@ -57,3 +57,23 @@ def test_amp_disabled_by_default():
     x = torch.ones(2)
     assert scaler.scale(x) is x
     assert scaler.get_scale() == 1.0
+
+
+def test_pin_memory_method_is_noop():
+    t = torch.zeros(2)
+    assert t.pin_memory() is t  # would RuntimeError on MPS without the shim
+
+
+def test_integer_and_indexed_devices():
+    if MPS:
+        assert torch.zeros(2).to(0).device.type == "mps"
+        assert torch.zeros(2).cuda(0).device.type == "mps"
+        assert torch.zeros(2).to("cuda:1").device.type == "mps"
+
+
+def test_load_upcasts_fp16(tmp_path):
+    p = tmp_path / "c.pt"
+    torch.save({"a": torch.randn(3).half()}, p)
+    out = mpsify.load(p, weights_only=True)
+    assert out["a"].dtype == torch.float32
+    assert out["a"].device.type == _EXPECT
